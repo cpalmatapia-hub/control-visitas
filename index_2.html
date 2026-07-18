@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Control de Visitas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --navy:#182A3D;
+    --navy-2:#233A52;
+    --paper:#F6F3EC;
+    --paper-2:#EDE8DC;
+    --brass:#B08C4F;
+    --brass-2:#8F702F;
+    --green:#3E7A5C;
+    --green-bg:#E4EFE8;
+    --red:#A8452F;
+    --red-bg:#F4E4DF;
+    --ink:#1E2B33;
+    --ink-soft:#5B6670;
+    --line:#D8D1C1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .app{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+
+  /* Header, like a building directory plaque */
+  header{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:22px 26px;
+    background:var(--navy);
+    border-radius:10px;
+    margin-bottom:24px;
+    box-shadow:0 8px 24px rgba(24,42,61,0.18);
+  }
+  .plaque-icon{
+    width:44px;height:44px;flex-shrink:0;
+  }
+  header h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:1.5rem;
+    color:var(--paper);
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:2px 0 0;
+    color:#B9C3CC;
+    font-size:0.85rem;
+    letter-spacing:0.4px;
+  }
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--line);}
+  .tab-btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.88rem;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    padding:10px 6px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+  }
+  .tab-btn.active{color:var(--navy);border-bottom-color:var(--brass);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* Form card */
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:24px;
+    margin-bottom:20px;
+  }
+  .section-label{
+    font-family:'Fraunces',serif;
+    font-size:0.78rem;
+    text-transform:uppercase;
+    letter-spacing:1.4px;
+    color:var(--brass-2);
+    margin:0 0 14px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--paper-2);
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:14px 16px;
+    margin-bottom:22px;
+  }
+  label{
+    display:block;
+    font-size:0.72rem;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--ink-soft);
+    margin-bottom:5px;
+  }
+  input, select{
+    width:100%;
+    padding:9px 11px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-family:'Inter',sans-serif;
+    font-size:0.92rem;
+    color:var(--ink);
+    background:var(--paper);
+  }
+  input:focus, select:focus, button:focus-visible{
+    outline:2px solid var(--brass);
+    outline-offset:1px;
+  }
+  input.mono{font-family:'IBM Plex Mono',monospace;}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.88rem;
+    padding:10px 20px;
+    border-radius:7px;
+    border:none;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--navy);color:var(--paper);}
+  .btn-primary:hover{background:var(--navy-2);}
+  .btn-ghost{background:none;color:var(--ink-soft);border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--ink-soft);}
+  #formMsg{font-size:0.85rem;color:var(--green);font-weight:600;}
+
+  /* Log / registry */
+  .log-controls{
+    display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;
+  }
+  .log-controls input{flex:1;min-width:180px;}
+  .log-controls select{max-width:170px;}
+  .count-pill{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    background:var(--paper-2);
+    padding:5px 10px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+
+  .ledger{display:flex;flex-direction:column;gap:10px;}
+  .visit-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:4px solid var(--ink-soft);
+    border-radius:8px;
+    padding:14px 18px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px;
+    align-items:center;
+  }
+  .visit-card.dentro{border-left-color:var(--green);}
+  .visit-card.salio{border-left-color:var(--ink-soft);opacity:0.85;}
+  .vc-main{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;}
+  .vc-name{font-weight:600;font-size:1rem;}
+  .vc-rut{font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:var(--ink-soft);}
+  .vc-meta{
+    width:100%;
+    display:flex;flex-wrap:wrap;gap:4px 18px;
+    font-size:0.8rem;color:var(--ink-soft);
+    margin-top:4px;
+  }
+  .vc-meta b{color:var(--ink);font-weight:600;}
+  .badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    padding:4px 9px;
+    border-radius:20px;
+    font-weight:500;
+  }
+  .badge.dentro{background:var(--green-bg);color:var(--green);}
+  .badge.salio{background:var(--paper-2);color:var(--ink-soft);}
+  .vc-actions{display:flex;gap:8px;align-items:center;}
+  .btn-small{
+    font-size:0.78rem;padding:7px 13px;border-radius:6px;border:none;cursor:pointer;font-weight:600;
+  }
+  .btn-salida{background:var(--brass);color:#fff;}
+  .btn-salida:hover{background:var(--brass-2);}
+  .btn-del{background:none;color:var(--red);border:1px solid var(--red-bg);}
+  .btn-del:hover{background:var(--red-bg);}
+
+  .empty{
+    text-align:center;padding:50px 20px;color:var(--ink-soft);
+  }
+  .empty svg{width:56px;height:56px;opacity:0.5;margin-bottom:10px;}
+  .empty p{margin:4px 0;}
+
+  footer{
+    text-align:center;font-size:0.75rem;color:var(--ink-soft);margin-top:30px;
+  }
+
+  @media (max-width:640px){
+    .visit-card{grid-template-columns:1fr;}
+    .vc-actions{justify-content:flex-end;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <svg class="plaque-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="6" width="20" height="38" rx="1" fill="#B08C4F"/>
+      <rect x="30" y="16" width="10" height="28" rx="1" fill="#8F702F"/>
+      <rect x="14" y="11" width="4" height="4" fill="#182A3D"/>
+      <rect x="22" y="11" width="4" height="4" fill="#182A3D"/>
+      <rect x="14" y="19" width="4" height="4" fill="#182A3D"/>
+      <rect x="22" y="19" width="4" height="4" fill="#182A3D"/>
+      <rect x="14" y="27" width="4" height="4" fill="#182A3D"/>
+      <rect x="22" y="27" width="4" height="4" fill="#182A3D"/>
+      <rect x="19" y="36" width="4" height="8" fill="#182A3D"/>
+      <rect x="33" y="22" width="4" height="4" fill="#182A3D"/>
+      <rect x="33" y="30" width="4" height="4" fill="#182A3D"/>
+    </svg>
+    <div>
+      <h1>Control de Visitas</h1>
+      <p>Registro de ingreso y salida del edificio</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="nueva">Nueva visita</button>
+    <button class="tab-btn" data-tab="registro">Registro</button>
+  </div>
+
+  <!-- NUEVA VISITA -->
+  <div class="panel active" id="panel-nueva">
+    <div class="card">
+      <form id="visitForm">
+        <p class="section-label">Datos del visitante</p>
+        <button type="button" id="scanBtn" class="btn" style="background:var(--navy);color:#fff;width:100%;margin-bottom:16px;padding:12px;font-size:0.92rem;">
+          📷 Escanear cédula
+        </button>
+        <div class="grid">
+          <div>
+            <label for="rut">RUT</label>
+            <input class="mono" id="rut" placeholder="12.345.678-9" required>
+          </div>
+          <div>
+            <label for="nombre">Nombre</label>
+            <input id="nombre" required>
+          </div>
+          <div>
+            <label for="apellidos">Apellidos</label>
+            <input id="apellidos" required>
+          </div>
+          <div>
+            <label for="placa">Placa patente</label>
+            <input class="mono" id="placa" placeholder="Opcional">
+          </div>
+          <div>
+            <label for="estacionamiento">N° de estacionamiento</label>
+            <input class="mono" id="estacionamiento" placeholder="Opcional">
+          </div>
+        </div>
+
+        <p class="section-label">Datos de la visita</p>
+        <div class="grid">
+          <div>
+            <label for="torre">Torre</label>
+            <input id="torre" placeholder="Ej: A">
+          </div>
+          <div>
+            <label for="numDepto">N° de departamento</label>
+            <input class="mono" id="numDepto" required>
+          </div>
+          <div>
+            <label for="residente">Nombre del residente</label>
+            <input id="residente" required>
+          </div>
+        </div>
+
+        <p class="section-label">Registro de horario</p>
+        <div class="grid">
+          <div>
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" required>
+          </div>
+          <div>
+            <label for="horaEntrada">Hora de entrada</label>
+            <input type="time" id="horaEntrada" required>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Registrar ingreso</button>
+          <span id="formMsg"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- REGISTRO -->
+  <div class="panel" id="panel-registro">
+    <div class="log-controls">
+      <input id="search" placeholder="Buscar por RUT, nombre, torre o departamento…">
+      <select id="filterStatus">
+        <option value="todos">Todas</option>
+        <option value="dentro">En el edificio</option>
+        <option value="salio">Ya salieron</option>
+      </select>
+      <span class="count-pill" id="countPill">0 registros</span>
+      <button class="btn btn-ghost" id="exportBtn" style="padding:8px 14px;font-size:0.8rem;">Exportar CSV</button>
+    </div>
+    <div class="ledger" id="ledger"></div>
+  </div>
+
+  <footer>Los datos se guardan de forma compartida para quienes usen esta aplicación.</footer>
+
+  <!-- MODAL ESCANEO QR -->
+  <div id="scanModal" style="display:none;position:fixed;inset:0;background:rgba(24,42,61,0.72);z-index:50;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#fff;border-radius:12px;padding:20px;max-width:420px;width:100%;">
+      <p class="section-label" style="margin-top:0;">Escanear cédula</p>
+      <p style="font-size:0.82rem;color:var(--ink-soft);margin:0 0 12px;">
+        Apunta la cámara al código de barras del reverso del carnet (o al QR si es un documento digital). Se intentará leer el RUT automáticamente. Nota: el código de la cédula chilena a veces trae los datos cifrados por el Registro Civil — si eso pasa, verás el texto crudo leído y podrás completar los datos a mano.
+      </p>
+      <div style="position:relative;background:#111;border-radius:8px;overflow:hidden;aspect-ratio:4/3;">
+        <video id="scanVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+        <canvas id="scanCanvas" style="display:none;"></canvas>
+      </div>
+      <p id="scanStatus" style="font-size:0.8rem;color:var(--ink-soft);margin:10px 0 0;min-height:18px;"></p>
+      <div class="actions" style="margin-top:14px;">
+        <button type="button" class="btn btn-ghost" id="scanCancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+
+<script>
+const STORAGE_KEY = 'visitas:log';
+let visits = [];
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function nowTimeStr(){
+  const d = new Date();
+  return d.toTimeString().slice(0,5);
+}
+function fmtDate(iso){
+  const [y,m,d] = iso.split('-');
+  return `${d}-${m}-${y}`;
+}
+function uid(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+async function loadVisits(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, true);
+    visits = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    visits = [];
+  }
+  renderLedger();
+}
+
+async function saveVisits(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(visits), true);
+  }catch(e){
+    console.error('No se pudo guardar', e);
+  }
+}
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab === 'registro') renderLedger();
+  });
+});
+
+// Defaults
+document.getElementById('fecha').value = todayStr();
+document.getElementById('horaEntrada').value = nowTimeStr();
+
+document.getElementById('visitForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const record = {
+    id: uid(),
+    rut: document.getElementById('rut').value.trim(),
+    nombre: document.getElementById('nombre').value.trim(),
+    apellidos: document.getElementById('apellidos').value.trim(),
+    placa: document.getElementById('placa').value.trim(),
+    estacionamiento: document.getElementById('estacionamiento').value.trim(),
+    torre: document.getElementById('torre').value.trim(),
+    numDepto: document.getElementById('numDepto').value.trim(),
+    residente: document.getElementById('residente').value.trim(),
+    fecha: document.getElementById('fecha').value,
+    horaEntrada: document.getElementById('horaEntrada').value,
+    horaSalida: null,
+    status: 'dentro'
+  };
+  visits.unshift(record);
+  await saveVisits();
+
+  const msg = document.getElementById('formMsg');
+  msg.textContent = `Ingreso registrado — ${record.nombre} ${record.apellidos}`;
+  setTimeout(()=> msg.textContent = '', 3500);
+
+  e.target.reset();
+  document.getElementById('fecha').value = todayStr();
+  document.getElementById('horaEntrada').value = nowTimeStr();
+});
+
+async function registrarSalida(id){
+  const v = visits.find(x=>x.id===id);
+  if(!v) return;
+  v.horaSalida = nowTimeStr();
+  v.status = 'salio';
+  await saveVisits();
+  renderLedger();
+}
+
+async function eliminarVisita(id){
+  if(!confirm('¿Eliminar este registro?')) return;
+  visits = visits.filter(x=>x.id!==id);
+  await saveVisits();
+  renderLedger();
+}
+
+function renderLedger(){
+  const term = document.getElementById('search').value.trim().toLowerCase();
+  const filter = document.getElementById('filterStatus').value;
+  const ledger = document.getElementById('ledger');
+
+  let list = visits.filter(v=>{
+    if(filter !== 'todos' && v.status !== filter) return false;
+    if(!term) return true;
+    const haystack = [v.rut, v.nombre, v.apellidos, v.torre, v.numDepto, v.residente]
+      .join(' ').toLowerCase();
+    return haystack.includes(term);
+  });
+
+  document.getElementById('countPill').textContent = `${list.length} registro${list.length===1?'':'s'}`;
+
+  if(list.length === 0){
+    ledger.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20c0-4 3.5-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg>
+      <p>No hay visitas que coincidan con la búsqueda.</p>
+    </div>`;
+    return;
+  }
+
+  ledger.innerHTML = list.map(v=>{
+    const dentro = v.status === 'dentro';
+    return `
+    <div class="visit-card ${v.status}">
+      <div class="vc-main">
+        <span class="vc-name">${escapeHtml(v.nombre)} ${escapeHtml(v.apellidos)}</span>
+        <span class="vc-rut">${escapeHtml(v.rut)}</span>
+        <span class="badge ${v.status}">${dentro ? 'En el edificio' : 'Salió'}</span>
+        <div class="vc-meta">
+          <span><b>${escapeHtml(v.torre || '—')}</b> Torre</span>
+          <span><b>${escapeHtml(v.numDepto)}</b> Depto</span>
+          <span>Residente: <b>${escapeHtml(v.residente)}</b></span>
+          ${v.placa ? `<span>Patente: <b>${escapeHtml(v.placa)}</b></span>` : ''}
+          ${v.estacionamiento ? `<span>Estac.: <b>${escapeHtml(v.estacionamiento)}</b></span>` : ''}
+          <span><b>${fmtDate(v.fecha)}</b></span>
+          <span>Entrada: <b>${v.horaEntrada}</b></span>
+          ${v.horaSalida ? `<span>Salida: <b>${v.horaSalida}</b></span>` : ''}
+        </div>
+      </div>
+      <div class="vc-actions">
+        ${dentro ? `<button class="btn-small btn-salida" onclick="registrarSalida('${v.id}')">Registrar salida</button>` : ''}
+        <button class="btn-small btn-del" onclick="eliminarVisita('${v.id}')">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---- Escaneo del carnet chileno ----
+// El reverso de la cédula suele traer un código de barras PDF417 (rectangular),
+// no un QR cuadrado — por eso usamos BarcodeDetector, que lee ambos formatos
+// de forma nativa en el navegador (más confiable que una librería solo-QR).
+// Importante: los datos del PDF417 de la cédula suelen venir cifrados por el
+// Registro Civil, así que puede que el texto crudo no sea legible como RUT.
+let scanStream = null;
+let scanRAF = null;
+let scanFrames = 0;
+let nativeDetector = null;
+
+function extraerRutDesdeTexto(texto){
+  try{
+    const url = new URL(texto);
+    const run = url.searchParams.get('RUN') || url.searchParams.get('run');
+    if(run) return run;
+  }catch(e){ /* no era una URL válida */ }
+  const m = texto.match(/(\d{7,8}-[\dkK])/);
+  return m ? m[1] : null;
+}
+
+function formatearRut(rut){
+  const limpio = rut.replace(/\./g,'').trim();
+  const [cuerpo, dv] = limpio.split('-');
+  if(!cuerpo || !dv) return limpio;
+  const cuerpoFmt = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${cuerpoFmt}-${dv}`;
+}
+
+function autocompletarDesdeHistorial(rut){
+  const rutNorm = rut.replace(/\./g,'').toLowerCase();
+  const previa = visits.find(v => v.rut.replace(/\./g,'').toLowerCase() === rutNorm);
+  if(previa){
+    document.getElementById('nombre').value = previa.nombre;
+    document.getElementById('apellidos').value = previa.apellidos;
+    if(previa.placa) document.getElementById('placa').value = previa.placa;
+    return true;
+  }
+  return false;
+}
+
+function manejarLecturaCruda(status, textoCrudo){
+  const rut = extraerRutDesdeTexto(textoCrudo);
+  if(rut){
+    document.getElementById('rut').value = formatearRut(rut);
+    const encontrado = autocompletarDesdeHistorial(rut);
+    status.textContent = encontrado
+      ? 'RUT y datos completados desde una visita anterior.'
+      : 'RUT leído. Completa nombre y apellidos.';
+    detenerEscaneo();
+    setTimeout(()=> document.getElementById('nombre').focus(), 200);
+    return true;
+  }else{
+    // Se detectó un código pero no calzó con un RUT legible (posible cifrado en la cédula).
+    status.innerHTML = `Se leyó un código pero no reconocí un RUT en su contenido:<br>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;word-break:break-all;">${escapeHtml(textoCrudo.slice(0,300))}</span><br>
+      <button type="button" id="usarCrudo" class="btn-small" style="margin-top:6px;background:var(--brass);color:#fff;">Usar este texto como RUT</button>
+      <button type="button" id="seguirEscaneando" class="btn-small btn-ghost" style="margin-top:6px;">Seguir escaneando</button>`;
+    document.getElementById('usarCrudo').onclick = () => {
+      document.getElementById('rut').value = textoCrudo;
+      detenerEscaneo();
+    };
+    document.getElementById('seguirEscaneando').onclick = () => {
+      status.textContent = 'Buscando código…';
+      scanFrames = 0;
+      scanRAF = requestAnimationFrame(tickScan);
+    };
+    return false;
+  }
+}
+
+async function iniciarEscaneo(){
+  const modal = document.getElementById('scanModal');
+  const video = document.getElementById('scanVideo');
+  const status = document.getElementById('scanStatus');
+  modal.style.display = 'flex';
+  status.textContent = 'Solicitando acceso a la cámara…';
+
+  if(!window.isSecureContext){
+    status.innerHTML = 'La cámara solo funciona si la página se abre por <b>https://</b> o <b>localhost</b>. Si abriste el archivo haciendo doble clic (file://), el navegador bloquea la cámara por seguridad: súbelo a un hosting o sírvelo con un servidor local.';
+    return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    status.textContent = 'Este navegador no soporta acceso a la cámara.';
+    return;
+  }
+
+  if('BarcodeDetector' in window){
+    try{
+      const formatosSoportados = await window.BarcodeDetector.getSupportedFormats();
+      const formatos = ['pdf417', 'qr_code'].filter(f => formatosSoportados.includes(f));
+      nativeDetector = new window.BarcodeDetector({ formats: formatos.length ? formatos : formatosSoportados });
+    }catch(e){
+      nativeDetector = null;
+    }
+  }
+
+  try{
+    scanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    video.srcObject = scanStream;
+    await video.play();
+    status.textContent = 'Buscando código…';
+    scanFrames = 0;
+    scanRAF = requestAnimationFrame(tickScan);
+  }catch(e){
+    if(e.name === 'NotAllowedError'){
+      status.textContent = 'Permiso de cámara denegado. Habilítalo en la configuración del navegador para este sitio.';
+    }else if(e.name === 'NotFoundError'){
+      status.textContent = 'No se encontró ninguna cámara en este dispositivo.';
+    }else{
+      status.textContent = 'No se pudo acceder a la cámara: ' + e.message;
+    }
+  }
+}
+
+async function tickScan(){
+  const video = document.getElementById('scanVideo');
+  const canvas = document.getElementById('scanCanvas');
+  const status = document.getElementById('scanStatus');
+  if(!scanStream) return;
+
+  if(video.readyState === video.HAVE_ENOUGH_DATA){
+    let textoLeido = null;
+
+    if(nativeDetector){
+      try{
+        const codigos = await nativeDetector.detect(video);
+        if(codigos.length) textoLeido = codigos[0].rawValue;
+      }catch(e){ /* seguimos intentando */ }
+    }else{
+      // Fallback sin BarcodeDetector: solo puede leer QR (no PDF417).
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+      if(code && code.data) textoLeido = code.data;
+    }
+
+    if(textoLeido){
+      manejarLecturaCruda(status, textoLeido);
+      return;
+    }
+  }
+  scanFrames++;
+  if(scanFrames === 200){
+    status.textContent = (nativeDetector ? '' : '⚠️ Este navegador solo puede leer QR, no PDF417. ') +
+      'Sigo buscando… acerca la cámara y asegura buena luz sobre el código.';
+  }
+  scanRAF = requestAnimationFrame(tickScan);
+}
+
+function detenerEscaneo(mantenerModal){
+  if(scanRAF) cancelAnimationFrame(scanRAF);
+  scanFrames = 0;
+  if(scanStream){
+    scanStream.getTracks().forEach(t => t.stop());
+    scanStream = null;
+  }
+  if(!mantenerModal){
+    setTimeout(()=> document.getElementById('scanModal').style.display = 'none', 900);
+  }
+}
+
+document.getElementById('scanBtn').addEventListener('click', iniciarEscaneo);
+document.getElementById('scanCancel').addEventListener('click', ()=>{
+  if(scanRAF) cancelAnimationFrame(scanRAF);
+  if(scanStream){ scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  document.getElementById('scanModal').style.display = 'none';
+});
+
+document.getElementById('search').addEventListener('input', renderLedger);
+document.getElementById('filterStatus').addEventListener('change', renderLedger);
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const headers = ['RUT','Nombre','Apellidos','Placa Patente','N Estacionamiento','Torre','N Departamento','Nombre del residente','Fecha','Hora entrada','Hora salida','Estado'];
+  const rows = visits.map(v=>[
+    v.rut,v.nombre,v.apellidos,v.placa,v.estacionamiento,v.torre,v.numDepto,v.residente,v.fecha,v.horaEntrada,v.horaSalida||'',v.status==='dentro'?'En el edificio':'Salió'
+  ]);
+  const csv = [headers, ...rows].map(r=>r.map(cell=>`"${(cell||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `control-visitas-${todayStr()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+loadVisits();
+</script>
+</body>
+</html>
